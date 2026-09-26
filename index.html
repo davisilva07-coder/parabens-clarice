@@ -1,0 +1,758 @@
+<!DOCTYPE html>
+<html lang="pt-BR" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CLARICE® — Uso inevitável</title>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Courier+Prime:ital,wght@0,400;0,700;1,400&family=Inter:wght@300;400;600;800&family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        cream: '#f4f1ea',
+                        'dark-green': '#1A362D',
+                        burgundy: '#5C1A1B',
+                        charcoal: '#1a1a1a',
+                        'paper-texture': '#ebe6da'
+                    },
+                    fontFamily: {
+                        clinical: ['Inter', 'sans-serif'],
+                        editorial: ['Playfair Display', 'serif'],
+                        data: ['Courier Prime', 'monospace'],
+                    },
+                    animation: {
+                        'spin-slow': 'spin 8s linear infinite',
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        /* Base Styles & Utilities */
+        body {
+            background-color: theme('colors.cream');
+            color: theme('colors.charcoal');
+            overflow-x: hidden;
+        }
+
+        .fade-in {
+            opacity: 0;
+            transform: translateY(30px);
+            transition: opacity 0.8s ease-out, transform 0.8s ease-out;
+        }
+        
+        .fade-in.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* Noise Texture overlay for vintage feel */
+        .noise-overlay {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            pointer-events: none;
+            z-index: 50;
+            opacity: 0.04;
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+        }
+
+        /* Capsule Animation */
+        .capsule-container {
+            position: relative;
+            width: 280px;
+            height: 100px;
+            margin: 2rem auto;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: theme('fontFamily.clinical');
+            font-weight: 800;
+            font-size: 2rem;
+            color: theme('colors.burgundy');
+            letter-spacing: 0.1em;
+        }
+
+        .capsule-half {
+            position: absolute;
+            top: 0;
+            width: 50%;
+            height: 100%;
+            background-color: theme('colors.dark-green');
+            transition: transform 1s cubic-bezier(0.25, 1, 0.5, 1);
+            z-index: 10;
+        }
+
+        .capsule-left {
+            left: 0;
+            border-radius: 50px 0 0 50px;
+            border-right: 2px solid rgba(0,0,0,0.2);
+            background: linear-gradient(135deg, #1A362D, #2a5245);
+        }
+
+        .capsule-right {
+            right: 0;
+            border-radius: 0 50px 50px 0;
+            border-left: 2px solid rgba(255,255,255,0.1);
+            background: linear-gradient(135deg, #2a5245, #1A362D);
+        }
+
+        .capsule-container.open .capsule-left { transform: translateX(-120%); }
+        .capsule-container.open .capsule-right { transform: translateX(120%); }
+
+        /* Progress Bars */
+        .progress-bar-fill {
+            width: 0%;
+            transition: width 1.5s cubic-bezier(0.22, 1, 0.36, 1);
+        }
+
+        /* Vinyl Record */
+        .vinyl-record {
+            width: 200px;
+            height: 200px;
+            border-radius: 50%;
+            background: #111;
+            position: relative;
+            box-shadow: 0 0 15px rgba(0,0,0,0.5), inset 0 0 0 4px #222, inset 0 0 0 10px #111, inset 0 0 0 12px #333, inset 0 0 0 20px #111, inset 0 0 0 22px #333, inset 0 0 0 40px #111, inset 0 0 0 42px #333;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: transform 0.3s ease;
+        }
+        
+        .vinyl-record:hover { transform: scale(1.05); }
+        .vinyl-record.playing { animation: spin 4s linear infinite; }
+        
+        .vinyl-center {
+            width: 70px;
+            height: 70px;
+            border-radius: 50%;
+            background-color: theme('colors.burgundy');
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+
+        .vinyl-hole {
+            width: 15px;
+            height: 15px;
+            border-radius: 50%;
+            background-color: theme('colors.cream');
+        }
+
+        @keyframes spin { 100% { transform: rotate(360deg); } }
+
+        /* Runaway Button */
+        #try-again-btn { transition: transform 0.2s ease-out; }
+        
+        /* Modal */
+        #error-modal { backdrop-filter: blur(5px); }
+
+        /* Estilo para o Checkbox Customizado (ERROS DE CSS CORRIGIDOS AQUI) */
+        input[type="checkbox"] {
+            appearance: none; background-color: transparent; font: inherit;
+            color: currentColor; width: 1.15em; height: 1.15em; border: 2px solid theme('colors.cream'); border-radius: 0.15em;
+            display: grid; place-content: center;
+        }
+        input[type="checkbox"]::before {
+            content: ""; width: 0.65em; height: 0.65em; transform: scale(0); transition: 120ms transform ease-in-out;
+            box-shadow: inset 1em 1em theme('colors.cream');
+            transform-origin: bottom left;
+            clip-path: polygon(14% 44%, 0 65%, 50% 100%, 100% 16%, 80% 0%, 43% 62%);
+        }
+        input[type="checkbox"]:checked::before { transform: scale(1); }
+    </style>
+</head>
+<body class="antialiased selection:bg-burgundy selection:text-cream">
+
+    <div class="noise-overlay"></div>
+
+    <section id="abertura" class="min-h-screen bg-dark-green text-cream flex flex-col items-center justify-center p-6 relative">
+        <div class="max-w-2xl w-full text-center border-4 border-cream/20 p-8 md:p-12 fade-in">
+            <p class="font-data text-xs md:text-sm tracking-widest text-cream/60 mb-8 uppercase">
+                Anvisa — Documento Oficial
+            </p>
+            
+            <h1 class="font-clinical font-800 text-5xl md:text-7xl mb-10 tracking-tighter">
+                CLARICE<sup class="text-2xl md:text-3xl">®</sup>
+            </h1>
+            
+            <div class="font-editorial text-lg md:text-xl text-left space-y-6 mb-12 border-t border-b border-cream/20 py-8">
+                <p>
+                    <strong class="font-clinical uppercase text-xs tracking-widest text-cream/70 block mb-1">Substância ativa:</strong>
+                    Carisma em concentração desconhecida.
+                </p>
+                <p>
+                    <strong class="font-clinical uppercase text-xs tracking-widest text-cream/70 block mb-1">Indicação:</strong>
+                    Provoca risadas recorrentes, exposição prolongada a papos bons e atua como conselheira oficial de todas as amigas.
+                </p>
+            </div>
+            
+            <div class="flex flex-col items-center gap-6">
+                <p class="font-data bg-cream text-dark-green px-4 py-2 text-sm font-bold animate-pulse inline-block">
+                    ⚠ USO INEVITÁVEL
+                </p>
+
+                <!-- 1. TERMO DE CONSENTIMENTO AQUI -->
+                <label class="flex items-start md:items-center gap-4 text-left max-w-md cursor-pointer group mt-4">
+                    <input type="checkbox" id="aceite-termo" class="mt-1 md:mt-0 cursor-pointer">
+                    <span class="font-data text-xs md:text-sm text-cream/60 group-hover:text-cream/90 transition-colors">
+                        Li e aceito os riscos de perder completamente a noção do tempo e de ser exposto a quantidades severas de MPB e ironia.
+                    </span>
+                </label>
+
+                <!-- BOTÃO DE ENTRADA BLOQUEADO INICIALMENTE -->
+                <button id="btn-entrar" disabled class="mt-4 font-clinical uppercase tracking-wider text-sm border-2 border-cream/20 text-cream/20 py-3 px-8 transition-all duration-300 disabled:cursor-not-allowed">
+                    Ler bula completa ↓
+                </button>
+            </div>
+        </div>
+    </section>
+
+    <section id="bula" class="min-h-screen py-20 px-6 max-w-4xl mx-auto">
+        <div class="border-b-2 border-charcoal pb-4 mb-12 fade-in">
+            <h2 class="font-editorial text-4xl md:text-5xl font-bold text-burgundy">Bula</h2>
+            <p class="font-data text-sm text-charcoal/60 mt-2">Documento de uso paciente. Leia atentamente.</p>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-12 font-editorial text-lg leading-relaxed">
+            <div class="space-y-8 fade-in">
+                <div>
+                    <h3 class="font-clinical font-bold text-xl uppercase tracking-widest text-dark-green mb-4 border-l-4 border-burgundy pl-3">Composição</h3>
+                    <ul class="list-disc list-inside space-y-2 text-charcoal/80 marker:text-burgundy">
+                        <li>1 dose concentrada de humor</li>
+                        <li>3 doses de personalidade marcante</li>
+                        <li>Quantidade indeterminada de ironia</li>
+                        <li>MPB em concentração severamente elevada</li>
+                        <li><span class="bg-burgundy/10 px-1">Farmácia:</span> presente em níveis clinicamente preocupantes</li>
+                        <li>Altas concentrações de companheirismo</li>
+                        <li>Responsabilidade social em níveis elevados, especialmente durante rolês</li>
+                    </ul>
+                </div>
+
+                <div>
+                    <h3 class="font-clinical font-bold text-xl uppercase tracking-widest text-dark-green mb-4 border-l-4 border-burgundy pl-3">Indicações</h3>
+                    <p class="text-charcoal/80 mb-2">CLARICE® é altamente indicado para:</p>
+                    <ul class="list-disc list-inside space-y-2 text-charcoal/80 marker:text-burgundy">
+                        <li>Indicado para casos de tristeza, com alta probabilidade de provocar risadas inesperadas</li>
+                        <li>Companhias que tornam a madrugada significativamente mais interessante</li>
+                        <li>Acompanhamento de pessoas que precisam de alguém para rir, conversar ou simplesmente estar por perto</li>
+                        <li>Gerenciamento de grupos de amigas em estado avançado de alcoolização</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="space-y-8 fade-in" style="transition-delay: 200ms;">
+                <div>
+                    <h3 class="font-clinical font-bold text-xl uppercase tracking-widest text-dark-green mb-4 border-l-4 border-burgundy pl-3">Efeitos Colaterais</h3>
+                    <ul class="list-disc list-inside space-y-2 text-charcoal/80 marker:text-burgundy">
+                        <li>Vontade incontrolável de responder imediatamente</li>
+                        <li>Risadas em ambientes silenciosos e horários inadequados</li>
+                        <li>Exposição passiva e involuntária a repertório de MPB</li>
+                        <li>Alteração significativa do horário habitual de sono</li>
+                        <li>Permanência acordado até horários questionáveis porque a conversa está boa demais</li>
+                        <li>Dependência moderada de uma companhia extremamente agradável</li>
+                        <li>Episódios recorrentes de pensar: "eu devia estar dormindo, mas vale a pena"</li>
+                    </ul>
+                </div>
+
+                <div class="bg-paper-texture p-6 border border-charcoal/10 shadow-sm relative overflow-hidden">
+                    <div class="absolute top-0 right-0 w-16 h-16 bg-burgundy/5 rounded-bl-full"></div>
+                    <h3 class="font-clinical font-bold text-xl uppercase tracking-widest text-burgundy mb-4">Advertência Grave</h3>
+                    <p class="font-editorial text-xl italic text-charcoal/90">
+                        "Em caso de presença de Clarice, não tente resistir. Segundo estudos ainda não reconhecidos pela ciência (mas amplamente testados na prática), ela é, de fato, inevitável."
+                    </p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 2. SECÇÃO DE RELATOS DE PACIENTES -->
+    <section class="py-20 bg-[#e8e4d8] px-6 border-y border-charcoal/10">
+        <div class="max-w-4xl mx-auto fade-in">
+            <h2 class="font-data text-center text-xl text-dark-green mb-10 uppercase tracking-widest font-bold">Avaliações Clínicas</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <!-- Relato 1 -->
+                <div class="bg-cream p-6 border-l-4 border-burgundy shadow-sm relative">
+                    <div class="text-burgundy text-xl mb-2">★★★★★</div>
+                    <p class="font-editorial text-lg italic text-charcoal/80 mb-4">"Fui perguntar uma coisa rápida sobre a faculdade, já se passaram três horas e agora estamos a falar sobre o sentido da vida. Recomendo, mas com cautela."</p>
+                    <p class="font-data text-xs font-bold text-dark-green uppercase">— Paciente Anônimo</p>
+                </div>
+                <!-- Relato 2 -->
+                <div class="bg-cream p-6 border-l-4 border-burgundy shadow-sm relative">
+                    <div class="text-burgundy text-xl mb-2">★★★★★</div>
+                    <p class="font-editorial text-lg italic text-charcoal/80 mb-4">"O nível de teimosia é alto, mas as risadas compensam. 10/10."</p>
+                    <p class="font-data text-xs font-bold text-dark-green uppercase">— Vítima Recorrente</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="py-20 bg-dark-green/5">
+        <div class="max-w-3xl mx-auto px-6 fade-in">
+            <h2 class="font-data text-center text-xl text-dark-green mb-8 uppercase tracking-widest font-bold">Registro de Fármaco</h2>
+            
+            <div class="capsule-container" id="capsule">
+                <div class="capsule-left"></div>
+                <div class="z-0">CLARICE</div>
+                <div class="capsule-right"></div>
+            </div>
+            
+            <p class="text-center font-data text-xs text-charcoal/50 mb-12">Role para sintetizar a substância</p>
+
+            <div class="bg-cream border-2 border-dark-green p-6 md:p-10 font-data text-sm md:text-base shadow-[8px_8px_0px_#1A362D]">
+                <table class="w-full text-left border-collapse">
+                    <tbody>
+                        <tr class="border-b border-dark-green/20">
+                            <th class="py-3 pr-4 font-bold text-dark-green w-1/3">Medicamento:</th>
+                            <td class="py-3 text-burgundy font-bold">CLARICE</td>
+                        </tr>
+                        <tr class="border-b border-dark-green/20">
+                            <th class="py-3 pr-4 font-bold text-dark-green">Classe Terapêutica:</th>
+                            <td class="py-3">Absolutamente Indeterminada</td>
+                        </tr>
+                        <tr class="border-b border-dark-green/20">
+                            <th class="py-3 pr-4 font-bold text-dark-green">Princípio Ativo:</th>
+                            <td class="py-3">Humor, carisma e uma quantidade clinicamente preocupante de gracinhas.</td>
+                        </tr>
+                        <tr class="border-b border-dark-green/20">
+                            <th class="py-3 pr-4 font-bold text-dark-green">Concentração:</th>
+                            <td class="py-3">1000 mg de personalidade marcante</td>
+                        </tr>
+                        <tr class="border-b border-dark-green/20">
+                            <th class="py-3 pr-4 font-bold text-dark-green">Via de Administração:</th>
+                            <td class="py-3">Conversa (Digital ou Analógica)</td>
+                        </tr>
+                        <tr class="border-b border-dark-green/20">
+                            <th class="py-3 pr-4 font-bold text-dark-green">Posologia:</th>
+                            <td class="py-3">Conforme a vontade de conversar (geralmente alta)</td>
+                        </tr>
+                        <tr class="border-b border-dark-green/20">
+                            <th class="py-3 pr-4 font-bold text-dark-green">Contraindicações:</th>
+                            <td class="py-3">Pessoas sem graça ou que dormem cedo</td>
+                        </tr>
+                        <tr>
+                            <th class="py-3 pr-4 font-bold text-dark-green">Superdosagem:</th>
+                            <td class="py-3">Conversar até altas horas da madrugada. Pode comprometer o horário de sono.</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </section>
+
+    <section class="py-24 px-6 max-w-4xl mx-auto bg-cream">
+        <h2 class="font-clinical font-800 text-3xl md:text-4xl text-charcoal mb-4 fade-in">Estudo Clínico sobre a Inevitabilidade</h2>
+        <p class="font-data text-charcoal/60 mb-12 fade-in">Análise de dados coletados em ambiente descontrolado.</p>
+
+        <div class="space-y-8 font-data">
+            <div class="fade-in progress-container" data-target="98">
+                <div class="flex justify-between mb-2">
+                    <span class="text-sm font-bold text-dark-green">Probabilidade de Clarice fazer você rir</span>
+                    <span class="text-sm font-bold text-burgundy progress-text">0%</span>
+                </div>
+                <div class="w-full bg-dark-green/10 h-6 border border-dark-green/30">
+                    <div class="bg-dark-green h-full progress-bar-fill relative overflow-hidden">
+                        <div class="absolute top-0 left-0 w-full h-full bg-[linear-gradient(45deg,rgba(255,255,255,0.15)_25%,transparent_25%,transparent_50%,rgba(255,255,255,0.15)_50%,rgba(255,255,255,0.15)_75%,transparent_75%,transparent)] bg-[length:20px_20px] animate-pulse"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="fade-in progress-container" data-target="12">
+                <div class="flex justify-between mb-2">
+                    <span class="text-sm font-bold text-dark-green">Probabilidade de uma conversa acabar rápido</span>
+                    <span class="text-sm font-bold text-burgundy progress-text">0%</span>
+                </div>
+                <div class="w-full bg-dark-green/10 h-6 border border-dark-green/30">
+                    <div class="bg-burgundy/80 h-full progress-bar-fill"></div>
+                </div>
+            </div>
+
+            <div class="fade-in progress-container" data-target="100">
+                <div class="flex justify-between mb-2">
+                    <span class="text-sm font-bold text-dark-green">Probabilidade de ela dizer que é "inevitável"</span>
+                    <span class="text-sm font-bold text-burgundy progress-text">0%</span>
+                </div>
+                <div class="w-full bg-dark-green/10 h-6 border border-dark-green/30">
+                    <div class="bg-dark-green h-full progress-bar-fill"></div>
+                </div>
+            </div>
+
+            <div class="fade-in progress-container" data-target="99.9">
+                <div class="flex justify-between mb-2">
+                    <span class="text-sm font-bold text-dark-green">Probabilidade de ela falar que é a maioral e perfeita</span>
+                    <span class="text-sm font-bold text-burgundy progress-text">0%</span>
+                </div>
+                <div class="w-full bg-dark-green/10 h-6 border border-dark-green/30">
+                    <div class="bg-dark-green h-full progress-bar-fill"></div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="py-24 bg-[#e8e4d8] border-y border-charcoal/10 relative overflow-hidden">
+        <svg class="absolute top-0 left-0 w-full h-32 opacity-5 text-burgundy" viewBox="0 0 1000 100" preserveAspectRatio="none"><path d="M0,50 Q250,10 500,50 T1000,50 L1000,0 L0,0 Z" fill="currentColor"></path></svg>
+        
+        <div class="max-w-4xl mx-auto px-6 flex flex-col md:flex-row items-center justify-between gap-12 fade-in">
+            <div class="text-center md:text-left md:w-1/2">
+                <p class="font-data text-xs text-burgundy tracking-widest uppercase mb-2">Sessão Analógica</p>
+                <h2 class="font-editorial text-4xl md:text-5xl text-charcoal mb-4">Trilha sonora<br>do inevitável</h2>
+                <p class="font-clinical text-charcoal/70 mb-6 max-w-md mx-auto md:mx-0">
+                    Uma prescrição sonora para acompanhar a leitura desta bula. Contém altos níveis de brasilidade.
+                </p>
+                
+                <!-- Audio Element -->
+                <audio id="bg-music" loop>
+                    <source src="" type="audio/mpeg" id="audio-source">
+                    Seu navegador não suporta o elemento de áudio.
+                </audio>
+                
+                <p class="font-data text-xs text-charcoal/40 italic">Clique no disco para dar play/pause.</p>
+            </div>
+
+            <div class="md:w-1/2 flex justify-center">
+                <div class="vinyl-record" id="vinyl-btn" title="Tocar música">
+                    <div class="vinyl-center">
+                        <div class="vinyl-hole"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="min-h-[70vh] flex flex-col items-center justify-center bg-cream px-6 py-20 text-center relative z-10">
+        <div class="fade-in max-w-lg">
+            <h2 class="font-editorial text-3xl md:text-4xl text-charcoal mb-8">
+                Você realmente acha que consegue sair daqui?
+            </h2>
+            <button id="trigger-modal-btn" class="font-clinical text-cream bg-dark-green hover:bg-burgundy transition-colors px-8 py-4 rounded-full font-bold tracking-wider text-sm shadow-lg hover:shadow-xl transform hover:-translate-y-1 duration-200">
+                SIM, EU CONSIGO
+            </button>
+        </div>
+    </section>
+
+    <div id="error-modal" class="fixed inset-0 bg-burgundy/95 z-50 hidden flex-col items-center justify-center p-6 transition-opacity duration-500 opacity-0">
+        <div class="bg-cream p-8 md:p-12 max-w-lg w-full border-4 border-charcoal shadow-[12px_12px_0px_#1a1a1a] relative">
+            <p class="font-data text-burgundy font-bold text-xl mb-4 animate-pulse">ERRO 404</p>
+            <h3 class="font-clinical font-800 text-3xl md:text-4xl text-charcoal mb-4">Saída não encontrada.</h3>
+            
+            <div class="bg-charcoal/5 p-4 border-l-4 border-burgundy mb-8">
+                <p class="font-data text-sm md:text-base text-charcoal">
+                    > Analisando rotas de fuga...<br>
+                    > Falha na execução.<br>
+                    > <span class="font-bold text-burgundy">Motivo crítico: Clarice é inevitável.</span>
+                </p>
+            </div>
+
+            <div class="h-16 relative flex items-center justify-center">
+                <button id="try-again-btn" class="absolute font-clinical font-bold text-sm bg-charcoal text-cream px-6 py-3 border-2 border-transparent hover:bg-cream hover:text-charcoal hover:border-charcoal transition-colors">
+                    TENTAR NOVAMENTE
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <section id="mensagem-final" class="hidden min-h-screen bg-cream flex-col items-center justify-center p-6 pb-20 text-center border-t border-charcoal/10 relative">
+        <div class="max-w-2xl mx-auto space-y-8 fade-in opacity-0 w-full" id="final-content">
+            <p class="font-editorial text-2xl md:text-3xl text-charcoal italic">
+                "Tá bom, pode ir."
+            </p>
+            
+            <p class="font-clinical text-sm text-burgundy uppercase tracking-widest font-bold">
+                Mas antes...
+            </p>
+
+            <div class="font-editorial text-lg md:text-xl text-charcoal/90 leading-relaxed space-y-6 text-left max-w-2xl mx-auto">
+                <p id="msg-p1" class="text-center font-bold text-xl mb-8 min-h-[3rem]"></p>
+                <p id="msg-p2" class="min-h-[4rem]"></p>
+                <p id="msg-p3" class="min-h-[4rem]"></p>
+                <p id="msg-p4" class="min-h-[4rem]"></p>
+                <p id="msg-p5" class="min-h-[5rem]"></p>
+            </div>
+
+            <!-- TÍTULO "FELIZ ANIVERSÁRIO" OCULTO INICIALMENTE -->
+            <div id="titulo-aniversario" class="pt-12 border-t border-charcoal/10 mt-12 text-center opacity-0 transition-opacity duration-1000">
+                <h1 class="font-editorial font-bold text-4xl md:text-5xl text-dark-green mb-4">
+                    Feliz aniversário, <span id="nome-final">Clarice</span>. <span class="text-charcoal text-2xl ml-2">❤️</span>
+                </h1>
+            </div>
+
+            <!-- 3. O VÍDEO DA AMIGA (Oculto inicialmente) -->
+            <div id="video-container" class="opacity-0 transition-opacity duration-1000 mt-16 w-full max-w-lg mx-auto hidden flex-col items-center">
+                <p class="font-data text-xs text-burgundy uppercase tracking-widest font-bold mb-4 border-b border-burgundy/30 pb-2">
+                    Evidência Clínica Oculta
+                </p>
+                <div class="relative w-full rounded-lg overflow-hidden border-4 border-cream shadow-[8px_8px_0px_#1A362D] bg-black">
+                    <video id="video-amiga" class="w-full h-auto" controls preload="metadata">
+                        <source src="" type="video/mp4" id="video-source-amiga">
+                        Seu navegador não suporta vídeos.
+                    </video>
+                </div>
+            </div>
+
+        </div>
+    </section>
+
+    <script>
+        /* =========================================================================
+           CONFIGURAÇÃO GERAL
+           ========================================================================= */
+        const config = {
+            nome: "Clarice",
+            musica: "musica.mp3", 
+            
+            // Coloque o arquivo de vídeo (.mp4) na mesma pasta e informe o nome abaixo:
+            video_amiga: "video.mp4",
+
+            msg_1: "Eu poderia simplesmente ter mandado um feliz aniversário normal, mas achei mais divertido gastar algumas horas fazendo um site completamente desnecessário.",
+            msg_2: "Clarice, você é uma pessoa incrível e muito engraçada. Eu duvidei quando você disse que era inevitável, mas hoje posso dizer que você é realmente inevitável KKKKK. Quero te falar que você se tornou parte das minhas risadas diárias, sempre com suas gracinhas e esse seu jeito único de ser.",
+            msg_3: "Você é uma pessoa muito dedicada, e tenho muita admiração por isso, sempre se empenhando em tudo o que faz. Tenho certeza de que você terá muito sucesso na vida, e vou ficar muito feliz em te ver vencendo e conquistando seus objetivos.",
+            msg_4: "Você é uma excelente amiga, companheira e uma pessoa de coração enorme. Em pouco tempo, criei um carinho muito grande por você, justamente pela personalidade que você tem e pela pessoa que demonstra ser.",
+            msg_5: "Que você tenha um ano brilhante, cheio de coisas boas, conquistas, risadas e momentos especiais. Que Deus possa te guiar em cada parte da sua vida, que Ele esteja sempre no centro de tudo e abençoando cada passo da sua caminhada."
+        };
+
+        /* =========================================================================
+           INICIALIZAÇÃO DE DADOS E EVENTOS
+           ========================================================================= */
+        document.getElementById('nome-final').textContent = config.nome;
+        
+        // Inicializa o Áudio
+        document.getElementById('audio-source').src = config.musica;
+        document.getElementById('bg-music').load();
+
+        // Inicializa o Vídeo
+        document.getElementById('video-source-amiga').src = config.video_amiga;
+        document.getElementById('video-amiga').load();
+
+        // 1. TERMO DE CONSENTIMENTO E BOTÃO DE ENTRAR
+        const checkboxTermo = document.getElementById('aceite-termo');
+        const btnEntrar = document.getElementById('btn-entrar');
+
+        checkboxTermo.addEventListener('change', function() {
+            if(this.checked) {
+                btnEntrar.removeAttribute('disabled');
+                btnEntrar.classList.remove('text-cream/20', 'border-cream/20');
+                btnEntrar.classList.add('bg-cream', 'text-dark-green', 'border-cream', 'hover:bg-burgundy', 'hover:text-cream', 'hover:border-burgundy', 'cursor-pointer');
+            } else {
+                btnEntrar.setAttribute('disabled', 'true');
+                btnEntrar.classList.add('text-cream/20', 'border-cream/20');
+                btnEntrar.classList.remove('bg-cream', 'text-dark-green', 'border-cream', 'hover:bg-burgundy', 'hover:text-cream', 'hover:border-burgundy', 'cursor-pointer');
+            }
+        });
+
+        btnEntrar.addEventListener('click', () => {
+            document.getElementById('bula').scrollIntoView({ behavior: 'smooth' });
+        });
+
+        // Efeito de digitação
+        function efeitoDigitacao(elementoId, texto, velocidade, callback) {
+            const elemento = document.getElementById(elementoId);
+            elemento.textContent = ''; // Limpa o texto antes de começar
+            let i = 0;
+            
+            function digitar() {
+                if (i < texto.length) {
+                    elemento.textContent += texto.charAt(i);
+                    i++;
+                    setTimeout(digitar, velocidade);
+                } else if (callback) {
+                    callback(); // Chama o próximo parágrafo quando este terminar
+                }
+            }
+            digitar();
+        }
+
+        /* =========================================================================
+           ANIMAÇÕES DE SCROLL (Intersection Observer)
+           ========================================================================= */
+        const fadeElements = document.querySelectorAll('.fade-in');
+        
+        const scrollObserver = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('visible');
+                    
+                    if (entry.target.querySelector('#capsule')) {
+                        setTimeout(() => {
+                            entry.target.querySelector('#capsule').classList.add('open');
+                        }, 500);
+                    }
+
+                    if (entry.target.classList.contains('progress-container')) {
+                        const targetValue = entry.target.getAttribute('data-target');
+                        const bar = entry.target.querySelector('.progress-bar-fill');
+                        const text = entry.target.querySelector('.progress-text');
+                        
+                        setTimeout(() => {
+                            bar.style.width = targetValue + '%';
+                            let start = 0;
+                            const duration = 1500;
+                            const startTime = performance.now();
+                            
+                            function updateNumber(currentTime) {
+                                const elapsed = currentTime - startTime;
+                                const progress = Math.min(elapsed / duration, 1);
+                                const easeProgress = 1 - Math.pow(1 - progress, 3); 
+                                
+                                const currentVal = (easeProgress * parseFloat(targetValue)).toFixed(1);
+                                text.textContent = currentVal.replace('.0', '') + '%';
+                                
+                                if (progress < 1) {
+                                    requestAnimationFrame(updateNumber);
+                                } else {
+                                    text.textContent = targetValue + '%';
+                                }
+                            }
+                            requestAnimationFrame(updateNumber);
+                        }, 300);
+                        
+                        scrollObserver.unobserve(entry.target); 
+                    }
+                }
+            });
+        }, { threshold: 0.1, rootMargin: "0px 0px -50px 0px" });
+
+        fadeElements.forEach(el => scrollObserver.observe(el));
+
+        /* =========================================================================
+           PLAYER DE VINIL (Áudio)
+           ========================================================================= */
+        const vinylBtn = document.getElementById('vinyl-btn');
+        const audio = document.getElementById('bg-music');
+        let isPlaying = false;
+
+        vinylBtn.addEventListener('click', () => {
+            if (config.musica) {
+                if (isPlaying) {
+                    audio.pause();
+                    vinylBtn.classList.remove('playing');
+                } else {
+                    audio.play().catch(e => console.log("Bloqueado pelo navegador:", e));
+                    vinylBtn.classList.add('playing');
+                }
+                isPlaying = !isPlaying;
+            }
+        });
+
+        /* =========================================================================
+           O MOMENTO INEVITÁVEL & EFEITO MÁQUINA DE ESCREVER COM O VÍDEO NO FINAL
+           ========================================================================= */
+        const triggerBtn = document.getElementById('trigger-modal-btn');
+        const modal = document.getElementById('error-modal');
+        const tryAgainBtn = document.getElementById('try-again-btn');
+        const sectionFinal = document.getElementById('mensagem-final');
+        const contentFinal = document.getElementById('final-content');
+        
+        let runCount = 0;
+        const maxRuns = 4; 
+
+        triggerBtn.addEventListener('click', () => {
+            modal.classList.remove('hidden');
+            setTimeout(() => { modal.classList.remove('opacity-0'); }, 50);
+        });
+
+        const moveButton = (e) => {
+            if (runCount < maxRuns) {
+                e.preventDefault(); 
+                const maxX = 120;
+                const maxY = 80;
+                const randomX = (Math.random() - 0.5) * 2 * maxX;
+                const randomY = (Math.random() - 0.5) * 2 * maxY;
+                
+                tryAgainBtn.style.transform = `translate(${randomX}px, ${randomY}px)`;
+                runCount++;
+                
+                const provocacoes = ["Muito devagar", "Quase", "Errou", "Inevitável, lembra?"];
+                if(runCount <= provocacoes.length) {
+                    tryAgainBtn.textContent = provocacoes[runCount-1].toUpperCase();
+                }
+            } else {
+                tryAgainBtn.style.transform = `translate(0px, 0px)`;
+                tryAgainBtn.textContent = "OK, EU DESISTO";
+                tryAgainBtn.classList.add('bg-dark-green', 'border-dark-green');
+                tryAgainBtn.classList.remove('bg-charcoal');
+            }
+        };
+
+        tryAgainBtn.addEventListener('mouseenter', moveButton);
+        tryAgainBtn.addEventListener('touchstart', (e) => {
+            if (runCount < maxRuns) { moveButton(e); }
+        });
+
+        tryAgainBtn.addEventListener('click', () => {
+            if (runCount >= maxRuns) {
+                modal.classList.add('opacity-0');
+                setTimeout(() => {
+                    modal.classList.add('hidden');
+                    
+                    sectionFinal.classList.remove('hidden');
+                    sectionFinal.classList.add('flex');
+                    sectionFinal.scrollIntoView({ behavior: 'smooth' });
+                    
+                    setTimeout(() => {
+                        contentFinal.classList.add('visible');
+                        
+                        // INICIA O EFEITO CASCATA DE DIGITAÇÃO AQUI
+                        efeitoDigitacao('msg-p1', config.msg_1, 40, () => {
+                            efeitoDigitacao('msg-p2', config.msg_2, 40, () => {
+                                efeitoDigitacao('msg-p3', config.msg_3, 40, () => {
+                                    efeitoDigitacao('msg-p4', config.msg_4, 40, () => {
+                                        efeitoDigitacao('msg-p5', config.msg_5, 40, () => {
+                                            
+                                            // ============================================
+                                            // APARECE O TÍTULO "FELIZ ANIVERSÁRIO" 
+                                            // ============================================
+                                            setTimeout(() => {
+                                                const tituloAniversario = document.getElementById('titulo-aniversario');
+                                                tituloAniversario.classList.remove('opacity-0');
+                                                tituloAniversario.classList.add('opacity-100');
+                                                
+                                                // ============================================
+                                                // REVELAÇÃO DO VÍDEO (2 SEGUNDOS APÓS O TÍTULO)
+                                                // ============================================
+                                                setTimeout(() => {
+                                                    const videoContainer = document.getElementById('video-container');
+                                                    
+                                                    // Exibe o vídeo
+                                                    videoContainer.classList.remove('hidden');
+                                                    videoContainer.classList.add('flex');
+                                                    
+                                                    // Força a renderização para a transição funcionar
+                                                    void videoContainer.offsetWidth; 
+                                                    videoContainer.classList.add('opacity-100');
+                                                    
+                                                    // Pausa a música de fundo automaticamente, se estiver tocando
+                                                    if (isPlaying) {
+                                                        audio.pause();
+                                                        vinylBtn.classList.remove('playing');
+                                                        isPlaying = false;
+                                                    }
+                                                    
+                                                    // Rola suavemente para o vídeo
+                                                    videoContainer.scrollIntoView({ behavior: 'smooth', block: 'end' });
+                                                    
+                                                }, 2000);
+                                                
+                                            }, 500); // 0.5s após terminar de digitar o texto
+                                            
+                                        });
+                                    });
+                                });
+                            });
+                        });
+
+                    }, 500);
+                }, 500);
+            }
+        });
+    </script>
+</body>
+</html>
